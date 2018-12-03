@@ -9,6 +9,7 @@ def test(dataset_name, model_name, store_misclassified):
     img_h, img_w = 64, 64
 
     nn = train.Classifier('classifier', img_w, img_h, len(preprocessing.CLASSES))
+    # Load test set
     dataset = list(map(lambda f:f.strip(), open(dataset_name, 'r').readlines()))
 
     n_test = len(dataset)
@@ -17,7 +18,7 @@ def test(dataset_name, model_name, store_misclassified):
         saver = tf.train.Saver()
         saver.restore(sess, model_name)
 
-        # setting up metrics
+        # Thiết lập số liệu
         confusion = np.zeros((len(preprocessing.CLASSES),
                               len(preprocessing.CLASSES)))
         correct, correct_case_insensitive, in_top3 = 0, 0, 0
@@ -28,11 +29,11 @@ def test(dataset_name, model_name, store_misclassified):
             image = preprocessing.open_image(dataset[i], (img_h, img_w))
             label = preprocessing.get_class_index(dataset[i])
 
-            # predict
+            # dự đoán ký tự trong ảnh
             classes = sess.run(nn.classes, feed_dict={ nn.input : [image] })
             predicted_label = np.argmax(classes[0])
 
-            # update metrics
+            # update lại số liệu
             confusion[label, predicted_label] += 1
             if label == predicted_label: correct += 1
             if (preprocessing.CLASSES[label].lower()
@@ -50,22 +51,23 @@ def test(dataset_name, model_name, store_misclassified):
 
         # showing metrics
         print("Accuracy :", correct/n_test*100)
-        print("Case-insensitive accuracy :", correct_case_insensitive/n_test*100)
+        # print("Case-insensitive accuracy :", correct_case_insensitive/n_test*100)
         print("Top 3 accuracy :", in_top3/n_test*100)
 
         confusion = (
                 confusion / np.array([np.sum(confusion, 1)]).transpose() * 255
         ).astype(np.uint8)
-        cv2.imshow('Confusion', cv2.resize(confusion, None, fx=10, fy=10,
-            interpolation=cv2.INTER_NEAREST))
-        cv2.waitKey(-1)
+        # cv2.imshow('Confusion', cv2.resize(confusion, None, fx=10, fy=10,
+        #     interpolation=cv2.INTER_NEAREST))
+        # cv2.waitKey(-1)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', type=str, required=True, help='Dataset name')
     parser.add_argument('-m', type=str, required=True, help='Model name')
-    parser.add_argument('-s', action='store_true', help='Store misclassified')
 
     opt = parser.parse_args()
 
     test(opt.d, opt.m, opt.s)
+
+    # python test.py -d datasplits/good_test -m saves/awesome_model-99000
